@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#324048">
+  <meta name="color-scheme" content="light">
+  <title>Калькулятор INDASTRO</title>
+  <meta name="description" content="Расчёт расхода и стоимости материалов для наливных полов INDASTRO">
+  <link rel="icon" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="https://indastro.ru" target="_blank" rel="noopener">
+        <img src="logo.png" alt="INDASTRO — Знаем. Умеем. Решаем" width="150" height="46">
+      </a>
+      <div class="mode" role="tablist" aria-label="Режим">
+        <button type="button" role="tab" class="mode__btn is-active" data-mode="user" aria-selected="true">Расчёт</button>
+        <button type="button" role="tab" class="mode__btn" data-mode="admin" aria-selected="false">Админ</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="wrap">
+      <p class="hero__kicker">Калькулятор наливного пола</p>
+      <h1 class="hero__title" id="heroTitle">Расход и стоимость материалов</h1>
+      <p class="hero__note">Все расчёты без учёта толщины слоя грунта и его веса</p>
+    </div>
+  </div>
+
+  <div id="draftBanner" class="banner" hidden>
+    <div class="wrap">На этом устройстве действуют <b>неопубликованные</b> настройки администратора.
+      <button type="button" class="link" id="draftDiscard">Вернуть опубликованные</button></div>
+  </div>
+
+  <main class="wrap">
+    <!-- ПОЛЬЗОВАТЕЛЬСКИЙ РЕЖИМ -->
+    <section id="userView">
+      <div class="systems" id="systemTabs" role="tablist" aria-label="Система"></div>
+
+      <div class="card">
+        <h2 class="card__title">Параметры объекта</h2>
+        <div class="grid2">
+          <div class="field" id="fArea"></div>
+          <div class="field" id="fThickness"></div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="optSealer">
+          <span class="switch__track"><span class="switch__dot"></span></span>
+          <span class="switch__label" id="optSealerLabel">Добавить запечатку (матовый лак)</span>
+        </label>
+      </div>
+
+      <details class="card card--fold" id="coefCard">
+        <summary class="card__title">Коэффициенты <span class="muted">— корректируйте под бюджет клиента</span></summary>
+        <div id="coefList"></div>
+        <button type="button" class="btn btn--ghost btn--sm" id="coefReset">Вернуть коэффициенты по умолчанию</button>
+      </details>
+
+      <div class="totals" id="totals">
+        <div class="totals__main">
+          <span class="totals__label">Итого стоимость системы</span>
+          <span class="totals__value" id="tTotal">—</span>
+        </div>
+        <div class="totals__side">
+          <span class="totals__label">за 1 м²</span>
+          <span class="totals__value totals__value--sm" id="tPerM2">—</span>
+        </div>
+      </div>
+
+      <div id="results"></div>
+
+      <div class="actions">
+        <button type="button" class="btn btn--primary" id="actShare">Поделиться расчётом</button>
+        <button type="button" class="btn btn--dark" id="actPrint">Сохранить PDF</button>
+      </div>
+    </section>
+
+    <!-- РЕЖИМ АДМИНИСТРАТОРА -->
+    <section id="adminView" hidden>
+      <div class="card" id="adminLogin">
+        <h2 class="card__title">Вход администратора</h2>
+        <form id="loginForm" class="login">
+          <div class="field">
+            <label for="adminPass">Пароль</label>
+            <input type="password" id="adminPass" autocomplete="current-password" required>
+          </div>
+          <button class="btn btn--primary" type="submit">Войти</button>
+          <p class="error" id="loginError" hidden>Неверный пароль</p>
+        </form>
+      </div>
+
+      <div id="adminPanel" hidden>
+        <div class="card">
+          <h2 class="card__title">Настройки калькулятора</h2>
+          <p class="muted">Задайте минимальные и максимальные значения, которые сможет выбрать пользователь,
+            а также значения по умолчанию, цены и веса комплектов. Поля с ошибкой подсвечиваются красным.</p>
+          <div class="admin-tabs" id="adminSystemTabs"></div>
+        </div>
+        <div id="adminEditor"></div>
+
+        <div class="card">
+          <h2 class="card__title">Сохранение</h2>
+          <div class="btn-col">
+            <button type="button" class="btn btn--primary" id="admSave">Применить на этом устройстве</button>
+            <button type="button" class="btn btn--dark" id="admPublishOpen">Опубликовать для всех…</button>
+            <button type="button" class="btn btn--ghost" id="admExport">Скачать settings.json</button>
+            <label class="btn btn--ghost">Загрузить settings.json<input type="file" id="admImport" accept=".json,application/json" hidden></label>
+            <button type="button" class="btn btn--ghost" id="admReset">Сбросить к значениям из Excel</button>
+          </div>
+          <p class="status" id="admStatus" role="status"></p>
+        </div>
+
+        <details class="card card--fold" id="publishCard">
+          <summary class="card__title">Публикация на GitHub</summary>
+          <p class="muted">Настройки хранятся в файле <code>settings.json</code> репозитория. После публикации все
+            пользователи получат новые значения (GitHub Pages обновляется в течение 1–2 минут).
+            Нужен персональный токен GitHub с правом записи в репозиторий (Contents: Read and write).
+            Токен хранится только до закрытия вкладки.</p>
+          <div class="grid2">
+            <div class="field"><label for="ghRepo">Репозиторий (владелец/имя)</label><input id="ghRepo" type="text" autocapitalize="off" spellcheck="false"></div>
+            <div class="field"><label for="ghBranch">Ветка</label><input id="ghBranch" type="text" autocapitalize="off" spellcheck="false"></div>
+          </div>
+          <div class="field"><label for="ghToken">Токен GitHub</label><input id="ghToken" type="password" autocomplete="off" spellcheck="false"></div>
+          <button type="button" class="btn btn--primary" id="admPublish">Опубликовать</button>
+        </details>
+
+        <details class="card card--fold">
+          <summary class="card__title">Пароль администратора</summary>
+          <div class="grid2">
+            <div class="field"><label for="newPass">Новый пароль</label><input id="newPass" type="password" autocomplete="new-password"></div>
+            <div class="field"><label for="newPass2">Повторите</label><input id="newPass2" type="password" autocomplete="new-password"></div>
+          </div>
+          <button type="button" class="btn btn--ghost" id="admPass">Сменить пароль</button>
+          <p class="muted small">Новый пароль войдёт в настройки — не забудьте применить и опубликовать их.</p>
+        </details>
+
+        <button type="button" class="btn btn--ghost btn--block" id="admLogout">Выйти из режима администратора</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span id="footCompany"></span>
+      <a id="footSite" href="https://indastro.ru" target="_blank" rel="noopener"></a>
+    </div>
+  </footer>
+
+  <div class="sticky-total" id="stickyTotal" aria-hidden="true">
+    <span class="sticky-total__label">Итого</span>
+    <span class="sticky-total__value" id="sTotal">—</span>
+    <span class="sticky-total__m2" id="sPerM2"></span>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="defaults.js"></script>
+  <script src="calc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
